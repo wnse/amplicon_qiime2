@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+nohup.out
+test_data/
+test_out/
+database/
