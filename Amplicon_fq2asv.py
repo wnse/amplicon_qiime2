@@ -123,13 +123,15 @@ def fq2asv(fq_list, sample_name, ref, outdir):
         rep_seqs_qza = os.path.join(outdir, 'asv_rep_seqs.qza')
         rep_seqs.save(rep_seqs_qza)
         out_dict.update({'asv_rep_seqs_qza':rep_seqs_qza})
+        
+        tax_qza = os.path.join(outdir, 'asv_tax.qza')
+        tax.save(tax_qza)
+        out_dict.update({'asv_tax_qza':tax_qza})
     except Exception as e:
         logging.error(e)
     return out_dict
 #     return data2df(stats), pd.concat([data2df(table).T, data2df(rep_seqs), data2df(tax)], axis=1)
 
-
-# %%
 
 # %%
 if __name__ == '__main__':
