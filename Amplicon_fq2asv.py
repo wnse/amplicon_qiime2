@@ -118,11 +118,11 @@ def fq2asv(fq_list, sample_name, ref, outdir):
 
         table_qza = os.path.join(outdir, 'asv_table.qza')
         table.save(table_qza)
-        out_dict.update({'asv_table_qza':table_qza})
+        out_dict.update({'asv_tab_qza':table_qza})
 
         rep_seqs_qza = os.path.join(outdir, 'asv_rep_seqs.qza')
         rep_seqs.save(rep_seqs_qza)
-        out_dict.update({'asv_rep_seqs_qza':rep_seqs_qza})
+        out_dict.update({'asv_seq_qza':rep_seqs_qza})
         
         tax_qza = os.path.join(outdir, 'asv_tax.qza')
         tax.save(tax_qza)
