@@ -32,7 +32,7 @@ def data2df(data):
 def get_qza_list(json_list, qza_name='asv_rep_seqs_qza'):
     from qiime2 import Artifact
     qza_list = []
-    for j in jsons:
+    for j in json_list:
         with open(j,'rt') as h:
             fq2asv = json.load(h)
             if qza_name  in fq2asv.keys():
@@ -153,8 +153,15 @@ if __name__ == '__main__':
     logfile = os.path.join(outdir, 'log')
     logging.basicConfig(level=logging.INFO, filename=logfile, format='%(asctime)s %(levelname)s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
     
-    info_dict = merge_all_qza(jsons, outdir)
-    info_dict.update(generate_seq_tree(info_dict['merged_seq_qza'], outdir))
+    try:
+        info_dict = merge_all_qza(jsons, outdir)
+    except Exception as e:
+        logging.error(e)
+    try:
+        info_dict.update(generate_seq_tree(info_dict['merged_seq_qza'], outdir))
+    except Exception as e:
+        logging.error(e)
+        
     json_out = write_json(info_dict, outdir=outdir)
     if not json_out:
         logging.info(f'write json failed')
