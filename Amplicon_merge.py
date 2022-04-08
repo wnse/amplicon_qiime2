@@ -29,7 +29,7 @@ def data2df(data):
 
 
 # %%
-def get_qza_list(json_list, qza_name='asv_rep_seqs_qza'):
+def get_qza_list(json_list, qza_name='asv_seq_qza'):
     from qiime2 import Artifact
     qza_list = []
     for j in json_list:
@@ -75,7 +75,7 @@ def merge_qza(qza_list, outfile, para='seq'):
 # %%
 def merge_all_qza(jsons, outdir):
     outdict = {}
-    seq_qza_list = get_qza_list(jsons, qza_name='asv_rep_seqs_qza')
+    seq_qza_list = get_qza_list(jsons, qza_name='asv_seq_qza')
     outfile = os.path.join(outdir, 'merged_seq.qza')
     merged_seq = merge_qza(seq_qza_list, outfile=outfile, para='seq')
     outdict.update({'merged_seq_qza':outfile})
@@ -85,7 +85,7 @@ def merge_all_qza(jsons, outdir):
     merged_tax = merge_qza(seq_qza_list, outfile=outfile, para='taxa')
     outdict.update({'merged_tax_qza':outfile})
 
-    seq_qza_list = get_qza_list(jsons, qza_name='asv_table_qza')
+    seq_qza_list = get_qza_list(jsons, qza_name='asv_tab_qza')
     outfile = os.path.join(outdir, 'merged_tab.qza')
     merged_tab = merge_qza(seq_qza_list, outfile=outfile, para='tab')
     outdict.update({'merged_tab_qza':outfile})

@@ -23,7 +23,7 @@ import Amplicon_merge
 import Amplicon_diversity
 import argparse
 
-# %% tags=[] jupyter={"outputs_hidden": true}
+# %% tags=[]
 if __name__ == '__main__':
     bin_dir = os.path.split(os.path.realpath(__file__))[0]
     pub_path = os.path.join(bin_dir, '../pub/')

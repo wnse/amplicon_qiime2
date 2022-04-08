@@ -85,11 +85,11 @@ def write_Ord_Res(action_result, metric, outdir):
     df_exp = getattr(action_result, pcoa_result).view(OrdinationResults).proportion_explained
     df_dis = getattr(action_result, distance_matrix).view(DistanceMatrix).to_data_frame()
     
-    df_samples.to_csv(sample_file)
+    df_samples.to_csv(sample_file, sep='\t')
     outdict.update({f'sample_csv': sample_file})
-    df_exp.to_csv(exp_file, header=None)
+    df_exp.to_csv(exp_file, header=None, sep='\t')
     outdict.update({f'exp_csv': exp_file})
-    df_dis.to_csv(dis_file)
+    df_dis.to_csv(dis_file, sep='\t')
     outdict.update({f'distance_matrix_csv':dis_file})
     
     return outdict
