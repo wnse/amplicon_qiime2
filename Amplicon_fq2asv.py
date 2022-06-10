@@ -111,6 +111,7 @@ def fq2asv(fq_list, sample_name, ref, outdir):
                               data2df(tax)],
                              axis=1)
         out_csv = os.path.join(outdir, 'asv_tax.csv')
+
         df_table.to_csv(out_csv)
         out_dict.update({'asv_fre_sta':number_describe(df_table['frequency'],'asv_frequency_')})
         out_dict.update({'asv_len_sta':number_describe(df_table['Sequence'].apply(len),'asv_seq_len_')})
@@ -123,6 +124,7 @@ def fq2asv(fq_list, sample_name, ref, outdir):
         rep_seqs_qza = os.path.join(outdir, 'asv_rep_seqs.qza')
         rep_seqs.save(rep_seqs_qza)
         out_dict.update({'asv_seq_qza':rep_seqs_qza})
+        out_dict.update({'asv_tax_csv':out_csv})
         
         tax_qza = os.path.join(outdir, 'asv_tax.qza')
         tax.save(tax_qza)
@@ -136,11 +138,11 @@ def fq2asv(fq_list, sample_name, ref, outdir):
 # %%
 if __name__ == '__main__':
     bin_dir = os.path.split(os.path.realpath(__file__))[0]
-    pub_path = os.path.join(bin_dir, '../pub/')
-    if os.path.isdir(pub_path):
-        sys.path.append(pub_path)
-    else:
-        raise(f'{pub_path} not exists')
+    # pub_path = os.path.join(bin_dir, '../pub/')
+    # if os.path.isdir(pub_path):
+    #     sys.path.append(pub_path)
+    # else:
+    #     raise(f'{pub_path} not exists')
     
     from write_json import write_json
     from mkdir import mkdir

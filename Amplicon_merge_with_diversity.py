@@ -26,11 +26,11 @@ import argparse
 # %% tags=[]
 if __name__ == '__main__':
     bin_dir = os.path.split(os.path.realpath(__file__))[0]
-    pub_path = os.path.join(bin_dir, '../pub/')
-    if os.path.isdir(pub_path):
-        sys.path.append(pub_path)
-    else:
-        raise(f'{pub_path} not exists')
+    # pub_path = os.path.join(bin_dir, '../pub/')
+    # if os.path.isdir(pub_path):
+    #     sys.path.append(pub_path)
+    # else:
+    #     raise(f'{pub_path} not exists')
     
     from write_json import write_json
     from mkdir import mkdir
