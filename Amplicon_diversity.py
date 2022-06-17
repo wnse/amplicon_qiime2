@@ -103,7 +103,7 @@ def get_alpha_rarefaction(table, tree, outdir):
     import biom
     # from q2_diversity._alpha._visualizer import _compute_summary
     # from q2_diversity._alpha._visualizer import _alpha_rarefaction_jsonp
-    outdict['alpha_rarefaction'] = []
+    outdict['alpha_rarefaction'] = {}
     metrics = {'observed_features', 'shannon', 'faith_pd'}
     tmp_table = table.view(biom.Table)
     max_depth = max(tmp_table.sum(axis='sample'))
@@ -117,23 +117,26 @@ def get_alpha_rarefaction(table, tree, outdir):
         # jsonp_filename = f'{m}.jsonp'
         # n_df = _compute_summary(data, 'sample-id')
         # _alpha_rarefaction_jsonp(outdir, jsonp_filename, m, n_df, '')
-        data.columns = [f'depth-{t[0]}_iter{t[1]}' for t in data.columns.values]
+        data.columns = [f'depth_{t[0]}_iter{t[1]}' for t in data.columns.values]
         data.to_csv(filename)
-        outdict['alpha_rarefaction'].append({f'{m}':filename})
+        outdict['alpha_rarefaction'][m] = filename
     return outdict
 
 
 # %%
-def get_diversity(table_qza, tree_qza, outdir):
+def get_diversity(table_qza, tree_qza, outdir, meta=None):
     from qiime2 import Artifact
     from qiime2 import Metadata
     
     table = Artifact.load(table_qza)
     tree = Artifact.load(tree_qza)
-    tmpmanifest = os.path.join(outdir, 'tmpmanifest')
-    df_tmp = pd.Series(table.view(pd.DataFrame).index.to_list()).rename('sample-id')
-    df_tmp = pd.concat([df_tmp, df_tmp.rename('sample')], axis=1)
-    df_tmp.to_csv(tmpmanifest, sep='\t', index=False)
+    if not meta:
+        tmpmanifest = os.path.join(outdir, 'tmpmanifest')
+        df_tmp = pd.Series(table.view(pd.DataFrame).index.to_list()).rename('sample-id')
+        df_tmp = pd.concat([df_tmp, df_tmp.rename('sample')], axis=1)
+        df_tmp.to_csv(tmpmanifest, sep='\t', index=False)
+    else:
+        tmpmanifest = meta
     sample_meta = Metadata.load(tmpmanifest)
     
     outdict = {}
@@ -164,6 +167,7 @@ if __name__ == '__main__':
     parse = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parse.add_argument('-t', '--table', required=True, help='merged table qza file')
     parse.add_argument('-e', '--tree', required=True, help='merged rooted tree qza file')
+    parse.add_argument('-m', '--meta', default=None, help='metadata csv ')
     parse.add_argument('-o', '--outdir', required=True, help='out dir for output files')
     args = parse.parse_args()
     
@@ -175,7 +179,15 @@ if __name__ == '__main__':
     logfile = os.path.join(outdir, 'log')
     logging.basicConfig(level=logging.INFO, filename=logfile, format='%(asctime)s %(levelname)s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
     
-    info_dict = get_diversity(table_qza, tree_qza, outdir)
+    if args.meta:
+        if os.path.isfile(args.meta):
+            metadata = args.meta
+        else:
+            metadata = None
+    else:
+        metadata = None
+
+    info_dict = get_diversity(table_qza, tree_qza, outdir, meta=metadata)
     json_out = write_json(info_dict, outdir=outdir)
     if not json_out:
         logging.info(f'write json failed')

@@ -16,7 +16,7 @@ def write_json(data, file=None, outdir=None):
 			return None
 		try:
 			with open(file, 'w') as H:
-				json.dump(data, H, indent=2)
+				json.dump(data, H, indent=2, ensure_ascii=False)
 			logging.info(f'write json to {file}')
 			return True
 		except Exception as e:

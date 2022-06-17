@@ -38,10 +38,11 @@ if __name__ == '__main__':
     parse = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parse.add_argument('-i', '--input', required=True, nargs='+', help='asv dir for analysis (absolute path)')
     parse.add_argument('-o', '--outdir', required=True, help='out dir for output files')
+    parse.add_argument('-j', '--json_prefix', default='Amplicon_fq2asv', help='json file prefix')
     args = parse.parse_args()
 
     indir = args.input
-    jsons = [os.path.join(i, 'Amplicon_fq2asv.json') for i in indir]
+    jsons = [os.path.join(i, f'{args.json_prefix}.json') for i in indir]
     outdir = args.outdir
     # outdir = '/mnt/d/Yangk/work/git/amplicon_qiime2/test_out/merged_out/'
     mkdir(outdir)

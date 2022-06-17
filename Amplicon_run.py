@@ -15,9 +15,7 @@ def run_docker(image, volumes, cmd):
     return client.containers.run(image, cmd, volumes=volumes, remove=True, stdout=True, stderr=True)
 
 def fq2asv(fq_list, outdir, samplename='test'):
-    # docker run --rm -v /mnt/d/Yangk/work/:/mnt/d/Yangk/work/ wnse/qiime2:220610 python /home/qiime2/bin/Amplicon_fq2asv.py -i /mnt/d/Yangk/work/qiime/test_data/SRR18505770_1.fastq /mnt/d/Yangk/work/qiime/test_data/SRR18505770_2.fastq -o /mnt/d/Yangk/work/git/amplicon_qiime2/test_out/test_docker -n SRR18505770
-    # spades.py --corona -s SRR17439822_MN908947.mapped.fastq -o spades_corona_docker
-    image_name='wnse/qiime2:220610'
+    image_name='wnse/qiime2:220617'
     cmd = f'python /home/qiime2/bin/Amplicon_fq2asv.py -i {" ".join(fq_list)} -o {outdir} -n {samplename}'
     vols = set([os.path.split(p)[0] for p in fq_list +[outdir]])
     vols = [f'{p}:{p}' for p in vols]    
@@ -32,7 +30,7 @@ def fq2asv(fq_list, outdir, samplename='test'):
     return None
 
 def amplicon_merge(dir_list, outdir):
-    image_name='wnse/qiime2:220610'
+    image_name='wnse/qiime2:220617'
     cmd = f'python /home/qiime2/bin/Amplicon_merge_with_diversity.py -i {" ".join(dir_list)} -o {outdir}'
     vols = set([os.path.split(p)[0] for p in dir_list + [outdir]])
     vols = [f'{p}:{p}' for p in vols]    
@@ -42,6 +40,21 @@ def amplicon_merge(dir_list, outdir):
     except Exception as e:
         logging.error(e)
     outfile = os.path.join(outdir, 'Amplicon_merge_with_diversity.json')
+    if os.path.isfile(outfile):
+        return outfile
+    return None
+
+def amplicon_diff(dir_list, metadata, outdir):
+    image_name='wnse/qiime2:220617'
+    cmd = f'python /home/qiime2/bin/Amplicon_merge_with_diff.py -i {" ".join(dir_list)} -m {metadata} -o {outdir}'
+    vols = set([os.path.split(p)[0] for p in dir_list + [metadata, outdir]])
+    vols = [f'{p}:{p}' for p in vols]    
+    try:
+        docker_out = run_docker(image_name, vols, cmd)
+        logging.info(f'docker out: {docker_out}')
+    except Exception as e:
+        logging.error(e)
+    outfile = os.path.join(outdir, 'Amplicon_merge_with_diff.json')
     if os.path.isfile(outfile):
         return outfile
     return None
@@ -62,6 +75,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-i', '--input', nargs='+', required=True, help='fastq file for assemble')
     parser.add_argument('-o', '--outdir', required=True, help='out dir for outputfiles')
+    parser.add_argument('-m', '--metadata', default=None, help='meta csv for analysis (absolute path)')
     parser.add_argument('-n', '--name', default='test', help='sample name')
     parser.add_argument('-t', '--threads', default=cpu_num, help='threads for fastqc')
     parser.add_argument('-debug', '--debug', action='store_true')
@@ -74,6 +88,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, filename=logfile, format='%(asctime)s %(levelname)s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
     input_list = args.input
     sample_name = args.name
+    metadata = args.metadata
 
     info_dict = {}
     taskID = args.taskID
@@ -83,12 +98,25 @@ if __name__ == '__main__':
     if args.type == 'merge':
         step = 'Merge'
         logging.info(step)
+        if not metadata:
+            sys.exit('metadata should be given if run merge')
+        if not os.path.isfile(metadata):
+            sys.exit(f'metadata file not exists: {metadata}')
         try:
             s = f'{step}\tR\t'
             write_status(status_report, s)
-            merge_json_file = amplicon_merge(input_list, outdir)
-            with open(merge_json_file,'rt') as H:
-                info_dict.update({'ASV_info':json.load(H)})
+            try:
+                merge_json_file = amplicon_diff(input_list, metadata, outdir)
+            except Exception as e:
+                logging.error(e)
+
+            try:
+                os.symlink(merge_json_file, os.path.join(outdir, f'{step}.json'))
+                # with open(os.path.join(outdir, f'{step}.json'),'rt') as H:
+                    # info_dict.update({'ASV_info':json.load(H)})
+            except Exception as e:
+                logging.error(f'symlink {merge_json_file} {e}')
+
             s = f'{step}\tD\t'
         except Exception as e:
             logging.error(e)
@@ -133,8 +161,14 @@ if __name__ == '__main__':
             if fq_cor_list:
                 fq_list = fq_cor_list
                 info_dict.update(outdict)
-            with open(fq2asv_json_file,'rt') as H:
-                info_dict.update({'ASV_info':json.load(H)})
+
+            try:
+                os.symlink(fq2asv_json_file, os.path.join(outdir, f'{step}.json'))
+                # with open(os.path.join(outdir, f'{step}.json'),'rt') as H:
+                    # info_dict.update({'ASV_info':json.load(H)})
+            except Exception as e:
+                logging.error(f'rename {fq2asv_json_file} {e}')
+
             s = f'{step}\tD\t'
         except Exception as e:
             logging.error(e)
@@ -146,6 +180,6 @@ if __name__ == '__main__':
             logging.error(f'{step} status {e}')
 
 
-    json_out = write_json(info_dict, outdir=outdir)
-    if not json_out:
-        logging.info(f'write json failed {info_dict}')
+    # json_out = write_json(info_dict, outdir=outdir)
+    # if not json_out:
+        # logging.info(f'write json failed {info_dict}')
