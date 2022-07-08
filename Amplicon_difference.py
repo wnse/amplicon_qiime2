@@ -169,10 +169,10 @@ def get_difference_alpha_res(meta_list, outdir):
         for metric in metrics:
             metric_tmp_dict = {}
             metric_tmp_dict['metric'] = metric
+            metric_tmp_dict['info'] = {}
             jsonp_file = os.path.join(outdir, metric, f'column-{meta}.jsonp')
             if check_file_exists(jsonp_file):
                 jsonp_content = open(jsonp_file, 'rt').readline()
-                metric_tmp_dict['info'] = {}
                 for tmp_dict in json.loads('['+ re.match(r'.*?({.*})',jsonp_content).group(1) +']'):
                     for i,v in tmp_dict.items():
                         metric_tmp_dict['info'][i] = v

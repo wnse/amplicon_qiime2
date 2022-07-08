@@ -30,10 +30,10 @@ if __name__ == '__main__':
     logfile = os.path.join(outdir, 'log')
     logging.basicConfig(level=logging.INFO, filename=logfile, format='%(asctime)s %(levelname)s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
     info_dict = {}
-    try:
-        info_dict = Amplicon_merge.merge_all_qza(jsons, outdir)
-    except Exception as e:
-        logging.error(e)
+    # try:
+    info_dict = Amplicon_merge.merge_all_qza(jsons, outdir, metadata_csv)
+    # except Exception as e:
+        # logging.error(e)
 
     try:
         info_dict.update(Amplicon_merge.generate_seq_tree(info_dict['merged_seq_qza'], outdir))
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     try:
         table_qza = info_dict['merged_tab_qza']
         tree_qza = info_dict['rooted_tree_qza']
-        info_dict.update(Amplicon_diversity.get_diversity(table_qza, tree_qza, outdir))
+        info_dict.update(Amplicon_diversity.get_diversity(table_qza, tree_qza, outdir, metadata_csv))
     except Exception as e:
         logging.error(e)
 

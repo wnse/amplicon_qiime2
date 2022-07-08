@@ -20,6 +20,7 @@ import json
 import pandas as pd
 import logging
 import argparse
+import re
 
 
 # %%
@@ -34,8 +35,49 @@ def get_diversity_action(sample_meta, table, tree):
         sampling_depth=max_depth,
         metadata=sample_meta,
     )
-    return action_results
+    alpha_rarefaction_viz, = diversity_actions.alpha_rarefaction(
+        phylogeny=tree,
+        table=table,
+        max_depth=max_depth,
+        metadata=sample_meta,
+    )
+    return action_results, alpha_rarefaction_viz
 
+# %%
+
+def check_file_exists(file, file_type='file'):
+    if file_type == 'file':
+        check = os.path.isfile
+    elif file_type == 'dir':
+        check = os.path.isdir
+    else:
+        return None
+    return check(file)
+
+def get_alpha_rarefaction_results(meta_list, alpha_rarefaction_viz, outdir):
+    try:
+        alpha_rarefaction_viz.export_data(os.path.join(outdir, f'alpha_rarefaction'))
+    except Exception as e:
+        logging.error(f'get_alpha_rarefaction_results:{e}')
+    out = []
+    metrics = {'observed_features', 'shannon', 'faith_pd'}
+    for meta in meta_list:
+        outdict = {}
+        outdict['group'] = meta
+        outdict['metrics'] = []
+        for metric in metrics:
+            metric_tmp_dict = {}
+            metric_tmp_dict['metric'] = metric
+            metric_tmp_dict['info'] = {}
+            jsonp_file = os.path.join(outdir, 'alpha_rarefaction', f'{metric}-{meta}.jsonp')
+            if check_file_exists(jsonp_file):
+                jsonp_content = open(jsonp_file, 'rt').readline()
+                for i,v in json.loads(re.match(r'.*?({.*})',jsonp_content).group(1)).items():
+                    metric_tmp_dict['info'][i] = v
+            if metric_tmp_dict:
+                outdict['metrics'].append(metric_tmp_dict)
+        out.append(outdict)
+    return out
 
 # %%
 def get_diversity_pcoa_results(action_result, outdir):
@@ -86,11 +128,16 @@ def write_Ord_Res(action_result, metric, outdir):
     df_dis = getattr(action_result, distance_matrix).view(DistanceMatrix).to_data_frame()
     
     df_samples.to_csv(sample_file, sep='\t')
-    outdict.update({f'sample_csv': sample_file})
+    outdict.update({f'sample_pcoa_csv': sample_file})
+    outdict.update({'sample_pcoa':[{"sample": i, "info": v} for i, v in df_samples.to_dict(orient="index").items()]})
+
     df_exp.to_csv(exp_file, header=None, sep='\t')
-    outdict.update({f'exp_csv': exp_file})
+    outdict.update({f'pcoa_exp_csv': exp_file})
+    outdict.update({'pcoa_exp':df_exp.to_dict()})
+    
     df_dis.to_csv(dis_file, sep='\t')
     outdict.update({f'distance_matrix_csv':dis_file})
+    outdict.update({'distance_matrix':df_dis.to_dict()})
     
     return outdict
 
@@ -137,18 +184,20 @@ def get_diversity(table_qza, tree_qza, outdir, meta=None):
         df_tmp.to_csv(tmpmanifest, sep='\t', index=False)
     else:
         tmpmanifest = meta
+    meta_list = pd.read_csv(tmpmanifest, sep='\t', index_col=0).columns
     sample_meta = Metadata.load(tmpmanifest)
     
     outdict = {}
     try:
-        action_result = get_diversity_action(sample_meta, table, tree)
+        action_result, alpha_rarefaction_viz = get_diversity_action(sample_meta, table, tree)
         outdict = get_diversity_pcoa_results(action_result, outdir)
+        outdict.update({'alpha_rarefaction':get_alpha_rarefaction_results(meta_list, alpha_rarefaction_viz, outdir)})
     except Exception as e:
         logging.error(e)
-    try:
-        outdict.update(get_alpha_rarefaction(table, tree, outdir))
-    except Exception as e:
-        logging.error(e)
+    # try:
+        # outdict.update(get_alpha_rarefaction(table, tree, outdir))
+    # except Exception as e:
+    #     logging.error(e)
     return outdict
 
 

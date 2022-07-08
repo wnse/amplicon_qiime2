@@ -20,6 +20,7 @@ import json
 import pandas as pd
 import logging
 import argparse
+import re
 
 
 # %%
@@ -71,29 +72,57 @@ def merge_qza(qza_list, outfile, para='seq'):
         merged.merged_data.save(outfile)
         return merged.merged_data.view(Metadata).to_dataframe()
 
+# %%
+def get_taxa_res(taxa_bar_plots_dir):
+    outlst = []
+    for level in range(1, 8):
+        jsonp_file = os.path.join(taxa_bar_plots_dir, f"level-{level}.jsonp")
+        if os.path.isfile(jsonp_file):
+            jsonp_content = open(jsonp_file, "rt").readline()
+            raw_jsonp = json.loads("[" + re.match(r"load_data\((.*)\)", jsonp_content).group(1) + "]")
+            keys = ["level", "legend", "sortby", "info"]
+            clean_jsonp = {}
+            for i, v in zip(keys, raw_jsonp):
+                clean_jsonp[i] = v
+            outlst.append(clean_jsonp)
+    return outlst
+
+
 
 # %%
-def merge_all_qza(jsons, outdir):
+def merge_all_qza(jsons, outdir, metadata=None):
+    from qiime2 import Metadata
+    from qiime2 import Artifact
+    import qiime2.plugins.taxa.actions as taxa_actions
+
     outdict = {}
     seq_qza_list = get_qza_list(jsons, qza_name='asv_seq_qza')
-    outfile = os.path.join(outdir, 'merged_seq.qza')
-    merged_seq = merge_qza(seq_qza_list, outfile=outfile, para='seq')
-    outdict.update({'merged_seq_qza':outfile})
+    merged_seq_qza = os.path.join(outdir, 'merged_seq.qza')
+    merged_seq = merge_qza(seq_qza_list, outfile=merged_seq_qza, para='seq')
+    outdict.update({'merged_seq_qza':merged_seq_qza})
 
     seq_qza_list = get_qza_list(jsons, qza_name='asv_tax_qza')
-    outfile = os.path.join(outdir, 'merged_tax.qza')
-    merged_tax = merge_qza(seq_qza_list, outfile=outfile, para='taxa')
-    outdict.update({'merged_tax_qza':outfile})
+    merged_tax_qza = os.path.join(outdir, 'merged_tax.qza')
+    merged_tax = merge_qza(seq_qza_list, outfile=merged_tax_qza, para='taxa')
+    outdict.update({'merged_tax_qza':merged_tax_qza})
 
     seq_qza_list = get_qza_list(jsons, qza_name='asv_tab_qza')
-    outfile = os.path.join(outdir, 'merged_tab.qza')
-    merged_tab = merge_qza(seq_qza_list, outfile=outfile, para='tab')
-    outdict.update({'merged_tab_qza':outfile})
+    merged_tab_qza = os.path.join(outdir, 'merged_tab.qza')
+    merged_tab = merge_qza(seq_qza_list, outfile=merged_tab_qza, para='tab')
+    outdict.update({'merged_tab_qza':merged_tab_qza})
     
     df_table = pd.concat([merged_seq, merged_tax, merged_tab], axis=1)
     outfile = os.path.join(outdir, 'merged_tab.csv')
     df_table.to_csv(outfile)
     outdict.update({'merged_tab_csv':outfile})
+
+    if metadata:
+        sample_meta = Metadata.load(metadata)
+        table = Artifact.load(merged_tab_qza)
+        taxonomy = Artifact.load(merged_tax_qza)
+        (taxa_bar_plots_viz,) = taxa_actions.barplot(table=table, taxonomy=taxonomy, metadata=sample_meta)
+        taxa_bar_plots_viz.export_data(os.path.join(outdir,"taxa_bar_plots"))
+        outdict.update({'taxa_info':get_taxa_res(os.path.join(outdir,"taxa_bar_plots"))})
     return outdict
 
 
@@ -144,6 +173,7 @@ if __name__ == '__main__':
     parse = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parse.add_argument('-i', '--input', required=True, nargs='+', help='asv dir for analysis (absolute path)')
     parse.add_argument('-o', '--outdir', required=True, help='out dir for output files')
+    parse.add_argument('-m', '--meta', default=None, help='metadata csv ')
     args = parse.parse_args()
     
     indir = args.input
@@ -153,8 +183,16 @@ if __name__ == '__main__':
     logfile = os.path.join(outdir, 'log')
     logging.basicConfig(level=logging.INFO, filename=logfile, format='%(asctime)s %(levelname)s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
     
+    if args.meta:
+        if os.path.isfile(args.meta):
+            metadata = args.meta
+        else:
+            metadata = None
+    else:
+        metadata = None
+
     try:
-        info_dict = merge_all_qza(jsons, outdir)
+        info_dict = merge_all_qza(jsons, outdir, metadata)
     except Exception as e:
         logging.error(e)
     try:

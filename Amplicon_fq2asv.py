@@ -96,7 +96,7 @@ def number_describe(df_S, name=None):
         df_sta.index = str(name) + df_sta.index
     return df_sta.astype(str).to_dict()
 
-def fq2asv(fq_list, sample_name, ref, outdir):
+def fq2asv(fq_list, sample_name, ref, outdir, ktImText=None):
     out_dict = {}
     try:
         raw_seqs = import_fq(fq_list, sample_name, tmpdir=outdir)
@@ -111,11 +111,28 @@ def fq2asv(fq_list, sample_name, ref, outdir):
                               data2df(tax)],
                              axis=1)
         out_csv = os.path.join(outdir, 'asv_tax.csv')
-
         df_table.to_csv(out_csv)
+        out_dict.update({'asv_info':[{**{'id':i},**v} for i,v in df_table.astype(str).to_dict(orient='index').items()]})
         out_dict.update({'asv_fre_sta':number_describe(df_table['frequency'],'asv_frequency_')})
         out_dict.update({'asv_len_sta':number_describe(df_table['Sequence'].apply(len),'asv_seq_len_')})
-        out_dict.update({'asv_tax_tab':out_csv})
+        out_dict.update({'asv_tax_csv':out_csv})
+
+        krona_csv = os.path.join(outdir, 'tax_krona_input.txt')
+        df_tmp = df_table.groupby('Taxon')['frequency'].sum().reset_index()
+        level = list(range(7))
+        for i in level:
+            df_tmp[i] = df_tmp['Taxon'].str.split(';').str[i]
+        df_tmp = df_tmp[['frequency']+level].fillna('')
+        level.reverse()
+        df_tmp.sort_values(by=level).to_csv(krona_csv, header=None, index=None, sep='\t')
+        if os.path.isfile(ktImText):
+            krona_html = os.path.join(outdir, 'tax_krona_input.html')
+            try:
+                cmd = f'{ktImText} {krona_csv} -o {krona_html}'
+                os.system(cmd)
+            except Exception as e:
+                logging.error(f'ktImText :{e}')
+        out_dict.update({'tax_krona_html':krona_html})
 
         table_qza = os.path.join(outdir, 'asv_table.qza')
         table.save(table_qza)
@@ -124,7 +141,6 @@ def fq2asv(fq_list, sample_name, ref, outdir):
         rep_seqs_qza = os.path.join(outdir, 'asv_rep_seqs.qza')
         rep_seqs.save(rep_seqs_qza)
         out_dict.update({'asv_seq_qza':rep_seqs_qza})
-        out_dict.update({'asv_tax_csv':out_csv})
         
         tax_qza = os.path.join(outdir, 'asv_tax.qza')
         tax.save(tax_qza)
@@ -158,12 +174,14 @@ if __name__ == '__main__':
     mkdir(outdir)
     logfile = os.path.join(outdir, 'log')
     logging.basicConfig(level=logging.INFO, filename=logfile, format='%(asctime)s %(levelname)s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
+
+    ktImText=os.path.join(bin_dir, 'Krona', 'KronaTools', 'scripts','ImportText.pl')
     
     fq_list = args.input
     sample_name = args.name
     ref = args.ref
     
-    info_dict = fq2asv(fq_list, sample_name, ref, outdir)
+    info_dict = fq2asv(fq_list, sample_name, ref, outdir, ktImText=ktImText)
     json_out = write_json(info_dict, outdir=outdir)
     if not json_out:
         logging.info(f'write json failed')

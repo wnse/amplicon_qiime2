@@ -8,37 +8,49 @@ qiime2 pipline
 - 特征序列分析
 
   ```shell
-  python Amplicon_run.py -n SRR18505770 -i SRR18505770_1.fastq SRR18505770_2.fastq -o $PWD/SRR18505770
+  python /Bio/Amplicon/Amplicon_run.py \
+  	-n SRR18505770 \
+  	-i SRR18505770_1.fastq SRR18505770_2.fastq \
+  	-o $PWD/SRR18505770
   ```
-  
+
   
 
 - 多样本分析
 
   ```shell
-  python ../Amplicon_run.py -type merge -m metadata.csv -o outdir -i $PWD/SRR18505770 $PWD/SRR18505774 $PWD/SRR18505775 $PWD/SRR18505775-1 $PWD/SRR18505775_trime $PWD/SRR18505786 $PWD/SRR18505800 $PWD/SRR18505803 $PWD/SRR18505854 $PWD/SRR18505864 $PWD/SRR18505865 $PWD/SRR18505869
+  python /Bio/Amplicon/Amplicon_run.py \
+  	-type merge \
+  	-tag DiversityAmplicon \
+  	-i $PWD/SRR18505770 $PWD/SRR18505774 $PWD/SRR18505775 $PWD/SRR18505775_trime $PWD/SRR18505786 $PWD/SRR18505800 $PWD/SRR18505803 $PWD/SRR18505854 $PWD/SRR18505864 $PWD/SRR18505865 $PWD/SRR18505869 $PWD/SRR18505869_1 \
+  	-m $PWD/metadata.csv \
+  	-o $PWD/test_docker_multi \
+  	-tID testamplicon
   
-  # $PWD/SRR18505770 为运行过特征序列分析的结果目录
+  # -i 为各样本运行过特征序列分析的结果目录
+  # -tag 为应用名称，生成结果中的json文件及status_report.txt中节点名称
   ```
-
   
   
-  - metadata.csv格式如下（`group`与`11`对应组名）
+  
+  - metadata.csv格式如下（`group`与`sampletype`组名）
+  
+    **注意：metadata.csv中的列标题不能为中文**
   
   ```
-  sampleid        group   11
-  SRR18505770     1_1     测试1
-  SRR18505774     1_1     1_2
-  SRR18505775     1_1     1_2
-  SRR18505775-1   1_1     1_2
-  SRR18505775_trime       1_1     1_2
-  SRR18505786     1_2     1_2
-  SRR18505800     1_2     1_3
-  SRR18505803     1_2     1_3
-  SRR18505854     1_2     1_3
-  SRR18505864     1_2     1_3
-  SRR18505865     1_2     1_3
-  SRR18505869     1_3     1_3
+  sampleid	group	sampletype
+  SRR18505770	G1	血液
+  SRR18505774	G1	血液
+  SRR18505775	G1	血液
+  SRR18505775_trime	G1	血液
+  SRR18505786	G1	血液
+  SRR18505800	G2	血液
+  SRR18505803	G3	血液
+  SRR18505854	G3	咽拭子
+  SRR18505864	G3	咽拭子
+  SRR18505865	G3	咽拭子
+  SRR18505869	G3	咽拭子
+  SRR18505869_1	G3	咽拭子
   ```
   
   
@@ -54,8 +66,8 @@ qiime2 pipline
     - Fastqc
     - Asv
 
-  - Fastqc.json
-  - ASV.json
+  - FastqcAmplicon.json
+  - AsvAmplicon.json
 
   | 参数                              | 类型  | 意义                   | 说明        |
   | --------------------------------- | ----- | ---------------------- | ----------- |
