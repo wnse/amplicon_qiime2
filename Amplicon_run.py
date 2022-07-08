@@ -16,7 +16,7 @@ def run_docker(image, volumes, cmd):
     return client.containers.run(image, cmd, volumes=volumes, remove=True, stdout=True, stderr=True)
 
 def fq2asv(fq_list, outdir, samplename='test'):
-    image_name='wnse/qiime2:220707'
+    image_name='wnse/qiime2:220708'
     cmd = f'python /home/qiime2/bin/Amplicon_fq2asv.py -i {" ".join(fq_list)} -o {outdir} -n {samplename}'
     vols = set([os.path.split(p)[0] for p in fq_list +[outdir]])
     vols = [f'{p}:{p}' for p in vols]    
@@ -31,7 +31,7 @@ def fq2asv(fq_list, outdir, samplename='test'):
     return None
 
 def amplicon_merge(dir_list, outdir):
-    image_name='wnse/qiime2:220707'
+    image_name='wnse/qiime2:220708'
     cmd = f'python /home/qiime2/bin/Amplicon_merge_with_diversity.py -i {" ".join(dir_list)} -o {outdir}'
     vols = set([os.path.split(p)[0] for p in dir_list + [outdir]])
     vols = [f'{p}:{p}' for p in vols]    
@@ -46,7 +46,7 @@ def amplicon_merge(dir_list, outdir):
     return None
 
 def amplicon_diff(dir_list, metadata, outdir):
-    image_name='wnse/qiime2:220707'
+    image_name='wnse/qiime2:220708'
     cmd = f'python /home/qiime2/bin/Amplicon_merge_with_diff.py -i {" ".join(dir_list)} -m {metadata} -o {outdir}'
     vols = set([os.path.split(p)[0] for p in dir_list + [metadata, outdir]])
     vols = [f'{p}:{p}' for p in vols]    
@@ -187,3 +187,9 @@ if __name__ == '__main__':
     # json_out = write_json(info_dict, outdir=outdir)
     # if not json_out:
         # logging.info(f'write json failed {info_dict}')
+    if not args.debug:
+        tmp_dir = os.path.join(outdir, 'tmp')
+        try:
+            shutil.rmtree(tmp_dir)
+        except Exception as e:
+            logging.error(e)

@@ -103,7 +103,8 @@ def get_diversity_pcoa_results(action_result, outdir):
     for metric in metrics:
         try:
             tmp_dict = write_Ord_Res(action_result, metric, outdir)
-            outdict['beta_diversity'].append({f'{metric}':tmp_dict})
+            tmp_dict['metric'] = metric
+            outdict['beta_diversity'].append(tmp_dict)
         except Exception as e:
             logging.error(e)
     
