@@ -36,8 +36,8 @@ def get_qza_list(json_list, qza_name='asv_seq_qza'):
     for j in json_list:
         with open(j,'rt') as h:
             fq2asv = json.load(h)
-            if qza_name  in fq2asv.keys():
-                file = fq2asv[qza_name]
+            if qza_name  in fq2asv['file_path'].keys():
+                file = fq2asv['file_path'][qza_name]
                 if os.path.isfile(file):
                     try:
                         qza_list.append(Artifact.load(file))

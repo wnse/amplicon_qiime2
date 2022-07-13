@@ -93,7 +93,7 @@ def stat2df(stat):
 def number_describe(df_S, name=None):
     df_sta = df_S.describe()
     if name:
-        df_sta.index = str(name) + df_sta.index
+        df_sta.index = str(name) + df_sta.index.str.strip('%')
     return df_sta.astype(str).to_dict()
 
 def fq2asv(fq_list, sample_name, ref, outdir, ktImText=None):
@@ -113,9 +113,9 @@ def fq2asv(fq_list, sample_name, ref, outdir, ktImText=None):
         out_csv = os.path.join(outdir, 'asv_tax.csv')
         df_table.to_csv(out_csv)
         out_dict.update({'asv_info':[{**{'id':i},**v} for i,v in df_table.astype(str).to_dict(orient='index').items()]})
-        out_dict.update({'asv_fre_sta':number_describe(df_table['frequency'],'asv_frequency_')})
-        out_dict.update({'asv_len_sta':number_describe(df_table['Sequence'].apply(len),'asv_seq_len_')})
-        out_dict.update({'asv_tax_csv':out_csv})
+        out_dict['asv_sta'] = number_describe(df_table['frequency'],'asv_frequency_')
+        out_dict['asv_sta'].update(number_describe(df_table['Sequence'].apply(len),'asv_seq_len_'))
+        out_dict['file_path'] = {'asv_tax_csv':out_csv}
 
         krona_csv = os.path.join(outdir, 'tax_krona_input.txt')
         df_tmp = df_table.groupby('Taxon')['frequency'].sum().reset_index()
@@ -125,26 +125,26 @@ def fq2asv(fq_list, sample_name, ref, outdir, ktImText=None):
         df_tmp = df_tmp[['frequency']+level].fillna('')
         level.reverse()
         df_tmp.sort_values(by=level).to_csv(krona_csv, header=None, index=None, sep='\t')
+        krona_html = os.path.join(outdir, 'tax_krona_input.html')
         if os.path.isfile(ktImText):
-            krona_html = os.path.join(outdir, 'tax_krona_input.html')
             try:
                 cmd = f'{ktImText} {krona_csv} -o {krona_html}'
                 os.system(cmd)
             except Exception as e:
                 logging.error(f'ktImText :{e}')
-        out_dict.update({'tax_krona_html':krona_html})
+        out_dict['file_path'].update({'tax_krona_html':krona_html})
 
         table_qza = os.path.join(outdir, 'asv_table.qza')
         table.save(table_qza)
-        out_dict.update({'asv_tab_qza':table_qza})
+        out_dict['file_path'].update({'asv_tab_qza':table_qza})
 
         rep_seqs_qza = os.path.join(outdir, 'asv_rep_seqs.qza')
         rep_seqs.save(rep_seqs_qza)
-        out_dict.update({'asv_seq_qza':rep_seqs_qza})
+        out_dict['file_path'].update({'asv_seq_qza':rep_seqs_qza})
         
         tax_qza = os.path.join(outdir, 'asv_tax.qza')
         tax.save(tax_qza)
-        out_dict.update({'asv_tax_qza':tax_qza})
+        out_dict['file_path'].update({'asv_tax_qza':tax_qza})
     except Exception as e:
         logging.error(e)
     return out_dict
