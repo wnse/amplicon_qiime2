@@ -141,13 +141,19 @@ def parse_ancom_dict(meta_file, json_file):
     # try:
     for tag_group in ancom_raw:
         tmp_out = {}
-        tag = tag_group['group']
-        raw_ancom_data = tag_group['data']
+        tag = ''
+        raw_ancom_data = []
+        if 'group' in tag_group.keys():
+            tag = tag_group['group']
+        if 'data' in tag_group.keys():
+            raw_ancom_data = tag_group['data']
+            df_data = pd.DataFrame(raw_ancom_data).set_index('id')
+
         tmp_out['group'] = tag
         tmp_out['data'] = raw_ancom_data
         tmp_out['ancom'] = []
-        df_data = pd.DataFrame(raw_ancom_data).set_index('id')
-        if tag_group['ancom']:
+        
+        if ('ancom' in tag_group.keys()) and tag_group['ancom']:
             ancom_reject = pd.DataFrame(tag_group['ancom']).set_index('id')
             ancom_reject['clr'] = df_data.loc[ancom_reject.index,'clr']
             if tag in df_meta.columns:
@@ -196,7 +202,7 @@ def get_inchlib_json(meta_file, json_file, outdir):
     json_raw = {}
     outdict = []
     beta_diversity = []
-    print(json_file)
+    # print(json_file)
     try:
         with open(json_file, 'rt') as H:
             json_raw = json.load(H)
@@ -383,10 +389,11 @@ if __name__ == '__main__':
     # json_out = write_json(info_dict, outdir=outdir)
     # if not json_out:
         # logging.info(f'write json failed {info_dict}')
-    # if not args.debug:
-    #     tmp_dir = os.path.join(outdir, 'tmp')
-    #     try:
-    #         shutil.rmtree(tmp_dir)
-    #     except Exception as e:
-    #         logging.error(e)
+    if not args.debug:
+        tmp_dir = os.path.join(outdir, 'tmp')
+        try:
+            if os.path.isdir(tmp_dir):
+                shutil.rmtree(tmp_dir)
+        except Exception as e:
+            logging.error(e)
 
