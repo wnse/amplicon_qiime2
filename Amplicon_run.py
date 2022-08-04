@@ -244,6 +244,33 @@ def get_inchlib_json(meta_file, json_file, outdir):
             outdict.append(tmp_out)
     return outdict
 
+def parse_krona_html(html_file, new_file):
+    logo_string = r'''<a style="margin:2px" target="_blank" href="https://github.com/marbl/Krona/wiki"><img style="vertical-align:middle;width:108px;height:30px;" src="' + logoImage + '" alt="Logo of Krona"/></a>'''
+    help_input = r'''<input type="button" id="help" value="?"'''
+    help_input_new = r'''<span id="help">'''
+    help_click = r'''onclick="window.open(\'https://github.com/marbl/Krona/wiki/Browsing%20Krona%20charts\', \'help\')"/>'''
+    help_click_new = r'''</span>'''
+    help_string = '''Help'''
+    help_string_new = ''''''
+    sub_dict = {help_input:help_input_new,
+    help_click:help_click_new,
+    help_string:help_string_new,
+    logo_string:""}
+    try:
+        with open(html_file,'rt') as h:
+            with open(new_file,'w') as h_new:
+                for l in h.readlines():
+                    check = False
+                    for sub_string  in sub_dict.keys():
+                        if sub_string in l:
+                            print(l.replace(sub_string,sub_dict[sub_string]).strip(), file=h_new)
+                            check = True
+                    if not check:
+                        print(l.strip(), file=h_new)
+        return new_file
+    except Exception as e:
+        logging.error(f'parse_krona_html {e}')
+        return html_file
 
 if __name__ == '__main__':
     cpu_num = multiprocessing.cpu_count()
@@ -365,9 +392,13 @@ if __name__ == '__main__':
                 info_dict.update(outdict)
 
             try:
-                shutil.copy(fq2asv_json_file, os.path.join(outdir, f'{step}.json'))
-                # with open(os.path.join(outdir, f'{step}.json'),'rt') as H:
-                    # info_dict.update({'ASV_info':json.load(H)})
+                # shutil.copy(fq2asv_json_file, os.path.join(outdir, f'{step}.json'))
+
+                with open(fq2asv_json_file, 'rt') as H:
+                    tmp_out_dict = json.load(H)
+                tmp_out_dict['file_path']['tax_krona_html'] = parse_krona_html(tmp_out_dict['file_path']['tax_krona_html'], os.path.join(outdir, 'tax_krona_new.html'))
+                with open(os.path.join(outdir, f'{step}.json'), 'w') as H:
+                    json.dump(tmp_out_dict, H, indent=2, ensure_ascii=False)
             except Exception as e:
                 logging.error(f'rename {fq2asv_json_file} {e}')
 
