@@ -17,7 +17,7 @@ def run_docker(image, volumes, cmd):
     return client.containers.run(image, cmd, volumes=volumes, remove=True, stdout=True, stderr=True)
 
 def fq2asv(fq_list, outdir, samplename='test'):
-    image_name='wnse/qiime2:20220718'
+    image_name='qiime2'
     cmd = f'python /home/qiime2/bin/Amplicon_fq2asv.py -i {" ".join(fq_list)} -o {outdir} -n {samplename}'
     vols = set([os.path.split(p)[0] for p in fq_list +[outdir]])
     vols = [f'{p}:{p}' for p in vols]    
@@ -32,7 +32,7 @@ def fq2asv(fq_list, outdir, samplename='test'):
     return None
 
 def amplicon_merge(dir_list, outdir):
-    image_name='wnse/qiime2:20220718'
+    image_name='qiime2'
     cmd = f'python /home/qiime2/bin/Amplicon_merge_with_diversity.py -i {" ".join(dir_list)} -o {outdir}'
     vols = set([os.path.split(p)[0] for p in dir_list + [outdir]])
     vols = [f'{p}:{p}' for p in vols]    
@@ -47,7 +47,7 @@ def amplicon_merge(dir_list, outdir):
     return None
 
 def amplicon_diff(dir_list, metadata, outdir):
-    image_name='wnse/qiime2:20220718'
+    image_name='qiime2'
     cmd = f'python /home/qiime2/bin/Amplicon_merge_with_diff.py -i {" ".join(dir_list)} -m {metadata} -o {outdir}'
     vols = set([os.path.split(p)[0] for p in dir_list + [metadata, outdir]])
     vols = [f'{p}:{p}' for p in vols]    
@@ -263,10 +263,10 @@ def parse_krona_html(html_file, new_file):
                     check = False
                     for sub_string  in sub_dict.keys():
                         if sub_string in l:
-                            print(l.replace(sub_string,sub_dict[sub_string]).strip(), file=h_new)
+                            print(l.replace(sub_string,sub_dict[sub_string]).strip('\n'), file=h_new)
                             check = True
                     if not check:
-                        print(l.strip(), file=h_new)
+                        print(l.strip('\n'), file=h_new)
         return new_file
     except Exception as e:
         logging.error(f'parse_krona_html {e}')
