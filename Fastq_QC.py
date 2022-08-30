@@ -227,22 +227,22 @@ def Fastq_QC(fq_list, outdir, threads):
         logging.info(f'trime error {trime_out}')
     # if fq_trime_1 and fq_trime_2:
     if fq_trime_list:
-        musket_out, fq_cor_list = run_musket(fq_trime_list, tmpdir, threads)
+        #musket_out, fq_cor_list = run_musket(fq_trime_list, tmpdir, threads)
 
-        if musket_out:
-            logging.info(f'musket error {musket_out}')
-        if fq_cor_list[0]:
+        #if musket_out:
+        #    logging.info(f'musket error {musket_out}')
+        #if fq_cor_list[0]:
     #         fq_cor_1 = fq_cor_list[0]
     #         jellyfish_out, histo_file = run_jellyfish(fq_cor_1, tmpdir, threads)
     #         read_length = cal_avg_len(fq_cor_1)
-            fastqc_sta_clean = run_cal_q20(fq_cor_list, name_list=get_file_name(fq_list), threads=threads)
+        # fastqc_sta_clean = run_cal_q20(fq_cor_list, name_list=get_file_name(fq_list), threads=threads)
     #         logging.info(f'{fastqc_sta_clean}')
     #         # if jellyfish_out:
     #         #     logging.info(f'jellyfish error {jellyfish_out}')
-        else:
+        #else:
     #         jellyfish_out, histo_file = run_jellyfish(fq_trime_list[0], tmpdir, threads)
     #         read_length = cal_avg_len(fq_trime_list[0])
-            fastqc_sta_clean = run_cal_q20(fq_trime_list, name_list=get_file_name(fq_list))
+        fastqc_sta_clean = run_cal_q20(fq_trime_list, name_list=get_file_name(fq_list))
     # else:
     #     jellyfish_out, histo_file = run_jellyfish(fq_list[0], tmpdir, threads)
     #     read_length = cal_avg_len(fq_list[0])
@@ -271,7 +271,7 @@ def Fastq_QC(fq_list, outdir, threads):
         fastq_sta.append(tmp)
 
     out_file_list.update({'fastqc_info': fastq_sta})
-    return fq_cor_list, out_file_list
+    return fq_trime_list, out_file_list
 
 
 if __name__ == '__main__':
